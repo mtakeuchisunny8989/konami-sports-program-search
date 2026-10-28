@@ -1,11 +1,12 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "ksc-search-conditions-v2";
+  const STORAGE_KEY = "ksc-search-conditions-v3";
   const DATA_URL = "data/programs.json";
 
-  // 初期設定: 対象日=本日、都道府県=東京・神奈川・千葉・埼玉
+  // 初期設定: 対象日=本日、都道府県=東京・神奈川・千葉・埼玉(1都3県)
   const DEFAULT_PREFECTURES = ["13", "14", "12", "11"];
+  const GREATER_TOKYO_LABEL = "1都3県";
 
   function todayJstIso() {
     const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -22,7 +23,7 @@
   let facilityByCode = new Map();
 
   const state = {
-    date: todayJstIso(),
+    dates: [todayJstIso()],
     programQuery: "",
     instructorQuery: "",
     prefectures: [...DEFAULT_PREFECTURES],
@@ -37,6 +38,7 @@
     programInput: document.getElementById("programInput"),
     instructorInput: document.getElementById("instructorInput"),
     advancedSummary: document.getElementById("advancedSummary"),
+    prefBadge: document.getElementById("prefBadge"),
     prefCheckGroup: document.getElementById("prefCheckGroup"),
     prefClearBtn: document.getElementById("prefClearBtn"),
     facilitySelect: document.getElementById("facilitySelect"),
@@ -92,6 +94,9 @@
     }
     const dates = Array.from(dateMap.keys()).sort();
 
+    // データに存在しない日付は除外しておく
+    state.dates = state.dates.filter((d) => dates.includes(d));
+
     el.dateRow.innerHTML = "";
 
     const allChip = document.createElement("button");
@@ -111,14 +116,18 @@
       el.dateRow.appendChild(chip);
     }
 
-    if (state.date !== "ALL" && !dates.includes(state.date)) {
-      state.date = "ALL";
-    }
-
     el.dateRow.addEventListener("click", (ev) => {
       const btn = ev.target.closest(".date-chip");
       if (!btn) return;
-      state.date = btn.dataset.value;
+      const value = btn.dataset.value;
+      if (value === "ALL") {
+        state.dates = [];
+      } else {
+        const set = new Set(state.dates);
+        if (set.has(value)) set.delete(value);
+        else set.add(value);
+        state.dates = Array.from(set);
+      }
       syncDateChipUI();
       onFilterChanged();
     });
@@ -128,7 +137,11 @@
 
   function syncDateChipUI() {
     for (const chip of el.dateRow.querySelectorAll(".date-chip")) {
-      chip.classList.toggle("selected", chip.dataset.value === state.date);
+      const isAll = chip.dataset.value === "ALL";
+      chip.classList.toggle(
+        "selected",
+        isAll ? state.dates.length === 0 : state.dates.includes(chip.dataset.value)
+      );
     }
   }
 
@@ -160,7 +173,7 @@
         else set.delete(code);
         state.prefectures = Array.from(set);
         buildFacilityOptions();
-        updateAdvancedSummary();
+        updatePrefBadge();
         onFilterChanged();
       });
 
@@ -181,12 +194,27 @@
 
   function updateAdvancedSummary() {
     const parts = [];
-    if (state.prefectures.length) parts.push(`都道府県${state.prefectures.length}件`);
     if (state.facility) parts.push("施設指定");
     if (state.timeRange) parts.push("時間帯指定");
     el.advancedSummary.textContent = parts.length
       ? `詳細条件(${parts.join("・")}選択中)`
       : "詳細条件(都道府県・施設・時間帯)";
+  }
+
+  function updatePrefBadge() {
+    const selected = state.prefectures;
+    let label;
+    if (selected.length === 0) {
+      label = "全国";
+    } else if (
+      selected.length === DEFAULT_PREFECTURES.length &&
+      DEFAULT_PREFECTURES.every((c) => selected.includes(c))
+    ) {
+      label = `${GREATER_TOKYO_LABEL}選択中`;
+    } else {
+      label = `都道府県${selected.length}件選択中`;
+    }
+    el.prefBadge.textContent = `【${label}】`;
   }
 
   function buildFacilityOptions() {
@@ -221,7 +249,7 @@
     const prefSet = new Set(state.prefectures);
 
     let results = dataset.programs.filter((p) => {
-      if (state.date !== "ALL" && p.date !== state.date) return false;
+      if (state.dates.length && !state.dates.includes(p.date)) return false;
       if (programQ && !normalize(p.program_name).includes(programQ)) return false;
       if (instructorQ && !normalize(p.instructor).includes(instructorQ)) return false;
       if (state.facility) {
@@ -327,7 +355,7 @@
       state.prefectures = [];
       syncPrefCheckboxUI();
       buildFacilityOptions();
-      updateAdvancedSummary();
+      updatePrefBadge();
       onFilterChanged();
     });
     el.facilitySelect.addEventListener("change", () => {
@@ -388,6 +416,7 @@
     buildPrefectureCheckboxes();
     buildFacilityOptions();
     updateAdvancedSummary();
+    updatePrefBadge();
 
     bindEvents();
     renderResults();

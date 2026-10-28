@@ -149,6 +149,13 @@ input[type="search"], select {
   margin-top: 10px;
 }
 
+.pref-badge {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
 .field-label {
   display: block;
   font-size: 0.85rem;

@@ -21,19 +21,21 @@
 
 <main>
   <section class="search-panel">
-    <div class="date-row" id="dateRow" role="group" aria-label="対象日を選択"></div>
+    <div class="date-row" id="dateRow" role="group" aria-label="対象日を選択(複数選択可)"></div>
 
     <div class="field">
       <label for="programInput">プログラム名</label>
-      <input id="programInput" type="search" inputmode="search" placeholder="例: ヨガ" autocomplete="off">
+      <input id="programInput" type="search" inputmode="search" placeholder="例: ジャム" autocomplete="off">
     </div>
 
     <div class="field">
       <label for="instructorInput">インストラクター名</label>
-      <input id="instructorInput" type="search" inputmode="search" placeholder="例: 山田" autocomplete="off">
+      <input id="instructorInput" type="search" inputmode="search" placeholder="例: 浅川" autocomplete="off">
     </div>
 
-    <details class="advanced" id="advancedDetails" open>
+    <p id="prefBadge" class="pref-badge"></p>
+
+    <details class="advanced" id="advancedDetails">
       <summary id="advancedSummary">詳細条件(都道府県・施設・時間帯)</summary>
       <div class="field">
         <div class="pref-field-head">
