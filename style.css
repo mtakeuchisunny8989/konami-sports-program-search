@@ -149,6 +149,49 @@ input[type="search"], select {
   margin-top: 10px;
 }
 
+.field-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-sub);
+  margin-bottom: 4px;
+}
+
+.pref-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pref-clear-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+  padding: 4px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.pref-check-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 8px;
+}
+
+.pref-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 0.95rem;
+}
+
+.pref-check-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
 .sort-row {
   display: flex;
   align-items: center;

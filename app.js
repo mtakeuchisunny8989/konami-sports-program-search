@@ -1,18 +1,31 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "ksc-search-conditions-v1";
+  const STORAGE_KEY = "ksc-search-conditions-v2";
   const DATA_URL = "data/programs.json";
+
+  // 初期設定: 対象日=本日、都道府県=東京・神奈川・千葉・埼玉
+  const DEFAULT_PREFECTURES = ["13", "14", "12", "11"];
+
+  function todayJstIso() {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return fmt.format(new Date());
+  }
 
   /** @type {{facilities: any[], programs: any[], fetched_at: string}} */
   let dataset = { facilities: [], programs: [], fetched_at: null };
   let facilityByCode = new Map();
 
   const state = {
-    date: "ALL",
+    date: todayJstIso(),
     programQuery: "",
     instructorQuery: "",
-    prefecture: "",
+    prefectures: [...DEFAULT_PREFECTURES],
     facility: "",
     timeRange: "",
     sort: "datetime",
@@ -23,7 +36,9 @@
     dateRow: document.getElementById("dateRow"),
     programInput: document.getElementById("programInput"),
     instructorInput: document.getElementById("instructorInput"),
-    prefSelect: document.getElementById("prefSelect"),
+    advancedSummary: document.getElementById("advancedSummary"),
+    prefCheckGroup: document.getElementById("prefCheckGroup"),
+    prefClearBtn: document.getElementById("prefClearBtn"),
     facilitySelect: document.getElementById("facilitySelect"),
     timeSelect: document.getElementById("timeSelect"),
     sortSelect: document.getElementById("sortSelect"),
@@ -117,7 +132,7 @@
     }
   }
 
-  function buildPrefectureOptions() {
+  function buildPrefectureCheckboxes() {
     const seen = new Map(); // code -> name
     for (const f of dataset.facilities) {
       seen.set(f.prefecture_code, f.prefecture);
@@ -125,19 +140,59 @@
     const entries = Array.from(seen.entries()).sort((a, b) =>
       a[0].localeCompare(b[0])
     );
-    el.prefSelect.innerHTML = '<option value="">すべて</option>';
+
+    // データに存在しない都道府県コードは除外しておく
+    const validCodes = new Set(entries.map(([code]) => code));
+    state.prefectures = state.prefectures.filter((c) => validCodes.has(c));
+
+    el.prefCheckGroup.innerHTML = "";
     for (const [code, name] of entries) {
-      const opt = document.createElement("option");
-      opt.value = code;
-      opt.textContent = name;
-      el.prefSelect.appendChild(opt);
+      const item = document.createElement("label");
+      item.className = "pref-check-item";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = code;
+      checkbox.checked = state.prefectures.includes(code);
+      checkbox.addEventListener("change", () => {
+        const set = new Set(state.prefectures);
+        if (checkbox.checked) set.add(code);
+        else set.delete(code);
+        state.prefectures = Array.from(set);
+        buildFacilityOptions();
+        updateAdvancedSummary();
+        onFilterChanged();
+      });
+
+      const text = document.createElement("span");
+      text.textContent = name;
+
+      item.appendChild(checkbox);
+      item.appendChild(text);
+      el.prefCheckGroup.appendChild(item);
     }
-    el.prefSelect.value = state.prefecture;
+  }
+
+  function syncPrefCheckboxUI() {
+    for (const cb of el.prefCheckGroup.querySelectorAll('input[type="checkbox"]')) {
+      cb.checked = state.prefectures.includes(cb.value);
+    }
+  }
+
+  function updateAdvancedSummary() {
+    const parts = [];
+    if (state.prefectures.length) parts.push(`都道府県${state.prefectures.length}件`);
+    if (state.facility) parts.push("施設指定");
+    if (state.timeRange) parts.push("時間帯指定");
+    el.advancedSummary.textContent = parts.length
+      ? `詳細条件(${parts.join("・")}選択中)`
+      : "詳細条件(都道府県・施設・時間帯)";
   }
 
   function buildFacilityOptions() {
+    const prefSet = new Set(state.prefectures);
     const facilities = dataset.facilities
-      .filter((f) => !state.prefecture || f.prefecture_code === state.prefecture)
+      .filter((f) => prefSet.size === 0 || prefSet.has(f.prefecture_code))
       .sort((a, b) => a.name.localeCompare(b.name, "ja"));
 
     el.facilitySelect.innerHTML = '<option value="">すべて</option>';
@@ -163,6 +218,7 @@
   function applyFilters() {
     const programQ = normalize(state.programQuery);
     const instructorQ = normalize(state.instructorQuery);
+    const prefSet = new Set(state.prefectures);
 
     let results = dataset.programs.filter((p) => {
       if (state.date !== "ALL" && p.date !== state.date) return false;
@@ -170,9 +226,9 @@
       if (instructorQ && !normalize(p.instructor).includes(instructorQ)) return false;
       if (state.facility) {
         if (p.facility_code !== state.facility) return false;
-      } else if (state.prefecture) {
+      } else if (prefSet.size > 0) {
         const fac = facilityByCode.get(p.facility_code);
-        if (!fac || fac.prefecture_code !== state.prefecture) return false;
+        if (!fac || !prefSet.has(fac.prefecture_code)) return false;
       }
       if (!matchesTimeRange(p.start_time, state.timeRange)) return false;
       return true;
@@ -267,18 +323,21 @@
       state.instructorQuery = el.instructorInput.value;
       onFilterChanged();
     });
-    el.prefSelect.addEventListener("change", () => {
-      state.prefecture = el.prefSelect.value;
-      state.facility = "";
+    el.prefClearBtn.addEventListener("click", () => {
+      state.prefectures = [];
+      syncPrefCheckboxUI();
       buildFacilityOptions();
+      updateAdvancedSummary();
       onFilterChanged();
     });
     el.facilitySelect.addEventListener("change", () => {
       state.facility = el.facilitySelect.value;
+      updateAdvancedSummary();
       onFilterChanged();
     });
     el.timeSelect.addEventListener("change", () => {
       state.timeRange = el.timeSelect.value;
+      updateAdvancedSummary();
       onFilterChanged();
     });
     el.sortSelect.addEventListener("change", () => {
@@ -326,9 +385,9 @@
     el.fetchedAt.textContent = formatFetchedAt(dataset.fetched_at);
 
     buildDateChips();
-    buildPrefectureOptions();
-    el.prefSelect.value = state.prefecture || "";
+    buildPrefectureCheckboxes();
     buildFacilityOptions();
+    updateAdvancedSummary();
 
     bindEvents();
     renderResults();

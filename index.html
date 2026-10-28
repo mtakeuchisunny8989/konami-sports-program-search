@@ -33,11 +33,14 @@
       <input id="instructorInput" type="search" inputmode="search" placeholder="例: 山田" autocomplete="off">
     </div>
 
-    <details class="advanced">
-      <summary>詳細条件(都道府県・施設・時間帯)</summary>
+    <details class="advanced" id="advancedDetails" open>
+      <summary id="advancedSummary">詳細条件(都道府県・施設・時間帯)</summary>
       <div class="field">
-        <label for="prefSelect">都道府県</label>
-        <select id="prefSelect"><option value="">すべて</option></select>
+        <div class="pref-field-head">
+          <span class="field-label">都道府県(複数選択可)</span>
+          <button type="button" id="prefClearBtn" class="pref-clear-btn">すべて解除</button>
+        </div>
+        <div id="prefCheckGroup" class="pref-check-group" role="group" aria-label="都道府県で絞り込み"></div>
       </div>
       <div class="field">
         <label for="facilitySelect">施設</label>
