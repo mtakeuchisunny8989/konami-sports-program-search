@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#c8102e">
+<title>コナミスポーツ プログラム検索</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>コナミスポーツ プログラム検索</h1>
+  <p id="fetchedAt" class="fetched-at">データ取得日時: 読み込み中...</p>
+</header>
+
+<main>
+  <section class="search-panel">
+    <div class="date-row" id="dateRow" role="group" aria-label="対象日を選択"></div>
+
+    <div class="field">
+      <label for="programInput">プログラム名</label>
+      <input id="programInput" type="search" inputmode="search" placeholder="例: ヨガ" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="instructorInput">インストラクター名</label>
+      <input id="instructorInput" type="search" inputmode="search" placeholder="例: 山田" autocomplete="off">
+    </div>
+
+    <details class="advanced">
+      <summary>詳細条件(都道府県・施設・時間帯)</summary>
+      <div class="field">
+        <label for="prefSelect">都道府県</label>
+        <select id="prefSelect"><option value="">すべて</option></select>
+      </div>
+      <div class="field">
+        <label for="facilitySelect">施設</label>
+        <select id="facilitySelect"><option value="">すべて</option></select>
+      </div>
+      <div class="field time-field">
+        <label for="timeSelect">開始時間帯</label>
+        <select id="timeSelect">
+          <option value="">すべて</option>
+          <option value="0,6">早朝(0:00-6:00)</option>
+          <option value="6,10">朝(6:00-10:00)</option>
+          <option value="10,14">昼(10:00-14:00)</option>
+          <option value="14,18">午後(14:00-18:00)</option>
+          <option value="18,22">夜(18:00-22:00)</option>
+          <option value="22,24">深夜(22:00-24:00)</option>
+        </select>
+      </div>
+    </details>
+
+    <div class="sort-row">
+      <span id="resultCount" class="result-count">件数: -</span>
+      <label class="sort-label">
+        並び順:
+        <select id="sortSelect">
+          <option value="datetime">日付順</option>
+          <option value="facility">施設順</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section id="resultList" class="result-list" aria-live="polite"></section>
+  <p id="emptyMessage" class="empty-message" hidden>条件に一致するプログラムが見つかりませんでした。</p>
+</main>
+
+<footer class="app-footer">
+  <p>本アプリは非公式です。最新・正確な情報は各施設の公式タイムテーブルをご確認ください。</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

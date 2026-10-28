@@ -1,0 +1,51 @@
+name: Collect KONAMI programs
+
+on:
+  schedule:
+    # 毎日 5:00 JST (= 前日 20:00 UTC) に実行
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: "テスト用: 取得するページ数の上限(空欄なら全件)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run collector
+        env:
+          MAX_PAGES: ${{ github.event.inputs.max_pages }}
+        run: |
+          if [ -n "$MAX_PAGES" ]; then
+            python scripts/collect.py --max-pages "$MAX_PAGES"
+          else
+            python scripts/collect.py
+          fi
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/programs.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update programs.json ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+            git push
+          fi
