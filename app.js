@@ -49,13 +49,16 @@
     emptyMessage: document.getElementById("emptyMessage"),
   };
 
-  // ---- 検索用正規化(ひらがな/カタカナ・全角半角・大小文字を無視) ----
+  // ---- 検索用正規化(ひらがな/カタカナ・全角半角・大小文字・空白を無視) ----
+  // 例: サイト上の表記「川嶋 亜希子(船橋)」に対し「川嶋亜希子」で検索しても
+  // ヒットするよう、姓名間の空白などを除去してから比較する。
   function normalize(s) {
     if (!s) return "";
     let n = s.normalize("NFKC").toLowerCase();
     n = n.replace(/[ァ-ヶ]/g, (ch) =>
       String.fromCharCode(ch.charCodeAt(0) - 0x60)
     );
+    n = n.replace(/\s+/g, "");
     return n;
   }
 
